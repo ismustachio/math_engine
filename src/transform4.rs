@@ -65,6 +65,18 @@ impl Transform4 {
         self.elements[3][2] = p.z;
     }
 
+    fn determinant(&self) -> f32 {
+        (self.elements[0][0]
+            * (self.elements[1][1] * self.elements[2][2]
+                - self.elements[2][1] * self.elements[1][2])
+            - self.elements[1][0]
+                * (self.elements[0][1] * self.elements[2][2]
+                    - self.elements[2][1] * self.elements[0][2])
+            + self.elements[2][0]
+                * (self.elements[0][1] * self.elements[1][2]
+                    - self.elements[1][1] * self.elements[0][2]))
+    }
+
     fn inverse(&self) -> Transform4 {
         let a = self.vec_at(0);
         let b = self.vec_at(1);
@@ -98,6 +110,186 @@ impl Transform4 {
 
     fn identity() -> Transform4 {
         Self::new(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+    }
+
+    // Returns 4x4 transformation matrix that represents a reflection
+    // through the plane f. The plane f is assumed to be normalized.
+    fn make_plane_reflection(f: &Plane) -> Transform4 {
+        let x = f.x * -2.0;
+        let y = f.y * -2.0;
+        let z = f.z * -2.0;
+        let nxny = x * f.y;
+        let nxnz = x * f.z;
+        let nynz = y * f.z;
+        Self::new(
+            x * f.x + 1.0,
+            nxny,
+            nxnz,
+            x * f.w,
+            nxny,
+            y * f.y + 1.0,
+            nynz,
+            y * f.w,
+            nxnz,
+            nynz,
+            z * f.z + 1.0,
+            z * f.w,
+        )
+    }
+
+    fn make_vec_reflection(v: &Vector3) -> Transform4 {
+        let x = v.x * -2.0;
+        let y = v.y * -2.0;
+        let z = v.z * -2.0;
+        let axay = x * v.y;
+        let axaz = x * v.z;
+        let ayaz = y * v.z;
+        Self::new(
+            x * v.x + 1.0,
+            axay,
+            axaz,
+            0.0,
+            axay,
+            y * v.y + 1.0,
+            ayaz,
+            0.0,
+            axaz,
+            ayaz,
+            z * v.z + 1.0,
+            0.0,
+        )
+    }
+
+    fn make_scale_x(sx: f32) -> Transform4 {
+        Self::new(sx, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+    }
+
+    fn make_scale_y(sy: f32) -> Transform4 {
+        Self::new(1.0, 0.0, 0.0, 0.0, 0.0, sy, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+    }
+
+    fn make_scale_z(sz: f32) -> Transform4 {
+        Self::new(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, sz, 0.0)
+    }
+
+    fn make_scale_xyz(sx: f32, sy: f32, sz: f32) -> Transform4 {
+        Self::new(sx, 0.0, 0.0, 0.0, 0.0, sy, 0.0, 0.0, 0.0, 0.0, sz, 0.0)
+    }
+
+    fn make_scale_vec(s: f32, v: &Vector3) -> Transform4 {
+        let scale = s - 1.0;
+        let x = v.x * scale;
+        let y = v.y * scale;
+        let z = v.z * scale;
+        let axay = x * v.y;
+        let axaz = x * v.z;
+        let ayaz = y * v.z;
+        Self::new(
+            x * v.x + 1.0,
+            axay,
+            axaz,
+            0.0,
+            axay,
+            y * v.y + 1.0,
+            ayaz,
+            0.0,
+            axaz,
+            ayaz,
+            z * v.z + 1.0,
+            0.0,
+        )
+    }
+
+    fn make_translation(v: &Vector3) -> Transform4 {
+        Self::new(1.0, 0.0, 0.0, v.x, 0.0, 1.0, 0.0, v.y, 0.0, 0.0, 1.0, v.z)
+    }
+
+    fn make_involution(v: &Vector3) -> Transform4 {
+        let x = v.x * 2.0;
+        let y = v.y * 2.0;
+        let z = v.z * 2.0;
+        let axay = x * v.y;
+        let axaz = x * v.z;
+        let ayaz = y * v.z;
+        Self::new(
+            x * v.x - 1.0,
+            axay,
+            axaz,
+            0.0,
+            axay,
+            y * v.y - 1.0,
+            ayaz,
+            0.0,
+            axaz,
+            ayaz,
+            z * v.z - 1.0,
+            0.0,
+        )
+    }
+
+    fn make_skew(angle: f32, a: &Vector3, b: &Vector3) -> Transform4 {
+        let t = angle.tan();
+        let x = a.x * t;
+        let y = a.y * t;
+        let z = a.z * t;
+        Self::new(
+            x * b.x + 1.0,
+            x * b.y,
+            x * b.z,
+            0.0,
+            y * b.x,
+            y * b.y + 1.0,
+            y * b.z,
+            0.0,
+            z * b.x,
+            z * b.y,
+            z * b.z + 1.0,
+            0.0,
+        )
+    }
+
+    fn make_rotation_x(angle: f32) -> Transform4 {
+        let c = angle.cos();
+        let s = angle.sin();
+        Self::new(1.0, 0.0, 0.0, 0.0, 0.0, c, -s, 0.0, 0.0, s, c, 0.0)
+    }
+
+    fn make_rotation_y(angle: f32) -> Transform4 {
+        let c = angle.cos();
+        let s = angle.sin();
+        Self::new(c, 0.0, s, 0.0, 0.0, 1.0, 0.0, 0.0, -s, 0.0, c, 0.0)
+    }
+
+    fn make_rotation_z(angle: f32) -> Transform4 {
+        let c = angle.cos();
+        let s = angle.sin();
+        Self::new(c, -s, 0.0, 0.0, s, c, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+    }
+
+    fn make_rotation(angle: f32, v: &Vector3) -> Transform4 {
+        let c = angle.cos();
+        let s = angle.sin();
+        let d = 1.0 - c;
+        let x = v.x * d;
+        let y = v.y * d;
+        let z = v.z * d;
+        let axay = x * v.y;
+        let axaz = x * v.z;
+        let ayaz = y * v.z;
+        Self::new(
+            c + x * v.x,
+            axay - s * v.z,
+            axaz + s * v.y,
+            0.0,
+            axay + s * v.z,
+            c + y * v.y,
+            ayaz - s * v.x,
+            0.0,
+            axaz - s * v.y,
+            ayaz + s * v.x,
+            c + z * v.z,
+            0.0,
+        )
     }
 }
 
@@ -136,6 +328,64 @@ impl Mul<Point3> for Transform4 {
                 + self.elements[1][2] * other.y
                 + self.elements[2][2] * other.z
                 + self.elements[3][2],
+        )
+    }
+}
+
+impl Mul<Matrix3> for Transform4 {
+    type Output = Matrix3;
+
+    fn mul(self, rhs: Matrix3) -> Self::Output {
+        Matrix3::new(
+            self.elements[0][0] * rhs[(0, 0)]
+                + self.elements[1][0] * rhs[(1, 0)]
+                + self.elements[2][0] * rhs[(2, 0)],
+            self.elements[0][0] * rhs[(0, 1)]
+                + self.elements[1][0] * rhs[(1, 1)]
+                + self.elements[2][0] * rhs[(2, 1)],
+            self.elements[0][0] * rhs[(0, 2)]
+                + self.elements[1][0] * rhs[(1, 2)]
+                + self.elements[2][0] * rhs[(2, 2)],
+            self.elements[0][0] * rhs[(0, 0)]
+                + self.elements[1][1] * rhs[(1, 0)]
+                + self.elements[2][1] * rhs[(2, 0)],
+            self.elements[0][0] * rhs[(0, 1)]
+                + self.elements[1][1] * rhs[(1, 1)]
+                + self.elements[2][1] * rhs[(2, 1)],
+            self.elements[0][0] * rhs[(0, 2)]
+                + self.elements[1][1] * rhs[(1, 2)]
+                + self.elements[2][1] * rhs[(2, 2)],
+            self.elements[0][0] * rhs[(0, 0)]
+                + self.elements[1][2] * rhs[(1, 0)]
+                + self.elements[2][2] * rhs[(2, 0)],
+            self.elements[0][0] * rhs[(0, 1)]
+                + self.elements[1][2] * rhs[(1, 1)]
+                + self.elements[2][2] * rhs[(2, 1)],
+            self.elements[0][0] * rhs[(0, 2)]
+                + self.elements[1][2] * rhs[(1, 2)]
+                + self.elements[2][2] * rhs[(2, 2)],
+        )
+    }
+}
+
+impl Mul<Vector2> for Transform4 {
+    type Output = Vector2;
+
+    fn mul(self, rhs: Vector2) -> Self::Output {
+        Vector2::new(
+            self.elements[0][0] * rhs.x + self.elements[1][0] * rhs.y,
+            self.elements[0][1] * rhs.x + self.elements[1][1] * rhs.y,
+        )
+    }
+}
+
+impl Mul<Point2> for Transform4 {
+    type Output = Vector2;
+
+    fn mul(self, rhs: Point2) -> Self::Output {
+        Vector2::new(
+            self.elements[0][0] * rhs.x + self.elements[1][0] * rhs.y + self.elements[3][0],
+            self.elements[0][1] * rhs.x + self.elements[1][1] * rhs.y + self.elements[3][1],
         )
     }
 }

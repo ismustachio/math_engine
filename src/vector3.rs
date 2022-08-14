@@ -194,3 +194,74 @@ impl Default for Point3 {
         }
     }
 }
+
+impl Mul<Matrix4> for Vector3 {
+    type Output = Vector4;
+
+    fn mul(self, rhs: Matrix4) -> Vector4 {
+        Vector4::new(
+            rhs[(0, 0)] * self.x + rhs[(0, 1)] * self.y + rhs[(2, 0)] * self.z,
+            rhs[(0, 1)] * self.x + rhs[(1, 1)] * self.y + rhs[(2, 1)] * self.z,
+            rhs[(0, 2)] * self.x + rhs[(1, 2)] * self.y + rhs[(2, 2)] * self.z,
+            rhs[(0, 3)] * self.x + rhs[(1, 3)] * self.y + rhs[(2, 3)] * self.z,
+        )
+    }
+}
+
+impl Mul<Matrix4> for Point3 {
+    type Output = Vector4;
+
+    fn mul(self, rhs: Matrix4) -> Self::Output {
+        Vector4::new(
+            rhs[(0, 0)] * self.x + rhs[(0, 1)] * self.y + rhs[(2, 0)] * self.z + rhs[(3, 0)],
+            rhs[(0, 1)] * self.x + rhs[(1, 1)] * self.y + rhs[(2, 1)] * self.z + rhs[(3, 1)],
+            rhs[(0, 2)] * self.x + rhs[(1, 2)] * self.y + rhs[(2, 2)] * self.z + rhs[(3, 2)],
+            rhs[(0, 3)] * self.x + rhs[(1, 3)] * self.y + rhs[(2, 3)] * self.z + rhs[(3, 3)],
+        )
+    }
+}
+
+// Returns the distance between the point q and the line determined by the point
+// p and the direction v.
+pub fn point_line_distance(q: &Point3, p: &Point3, v: &Vector3) -> f32 {
+    let a = (*q - *p).cross(&v);
+    f32::sqrt(a.dot(&a) / v.dot(&v))
+}
+
+// Returns the distance between two lines determined by the points p1 and p2 and the
+// directions v1 and v2.
+pub fn line_line_distance(p1: &Point3, v1: &Vector3, p2: &Point3, v2: &Vector3) -> f32 {
+    let dp = *p2 - *p1;
+
+    let v12 = v1.dot(&v1);
+    let v22 = v2.dot(&v2);
+    let v1v2 = v1.dot(&v2);
+
+    let mut det = v1v2 * v1v2 - v12 * v22;
+
+    if det.abs() > f32::MIN {
+        det = 1.0 / det;
+
+        let dpv1 = dp.dot(&v1);
+        let dpv2 = dp.dot(&v2);
+        let t1 = (v1v2 * dpv2 - v22 * dpv1) * det;
+        let t2 = (v12 * dpv2 - v1v2 * dpv1) * det;
+        (dp + *v2 * t2 - *v1 * t1).magnitude()
+    } else {
+        let a = dp.cross(&v1);
+        f32::sqrt(a.dot(&a) / v12)
+    }
+}
+
+// Calculates the point q at which the line determined by p and v intersects
+// the plane f and returns true if such a point exists and false if v is parallel
+// to the plane.
+pub fn plane_line_intersect(p: &Point3, v: &Vector3, f: &Plane, mut q: Point3) -> bool {
+    let fv = f.vec_dot(v);
+    if fv.abs() > f32::MIN {
+        q = *p - *v * (f.point_dot(p) / fv);
+        true
+    } else {
+        false
+    }
+}

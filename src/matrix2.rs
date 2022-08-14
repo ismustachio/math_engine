@@ -1,4 +1,4 @@
-use std::ops::{Div, Index, IndexMut, Mul};
+use std::ops::{Div, DivAssign, Index, IndexMut, Mul, MulAssign};
 
 use crate::prelude::*;
 
@@ -33,8 +33,8 @@ impl Matrix2 {
         let inv = 1.0 / self.determinant();
         Self::new(
             self.elements[1][1] * inv,
-            -self.elements[0][1] * inv,
             -self.elements[1][0] * inv,
+            -self.elements[0][1] * inv,
             self.elements[0][0] * inv,
         )
     }
@@ -120,6 +120,24 @@ impl Mul<Matrix2> for Matrix2 {
     }
 }
 
+impl MulAssign<Matrix2> for Matrix2 {
+    fn mul_assign(&mut self, other: Matrix2) {
+        self.elements[0][0] *= other[(0, 0)] + self.elements[0][1] * other[(1, 0)];
+        self.elements[1][0] *= other[(0, 1)] + self.elements[0][1] * other[(1, 1)];
+        self.elements[0][1] *= other[(0, 0)] + self.elements[1][1] * other[(1, 0)];
+        self.elements[1][1] *= other[(0, 1)] + self.elements[0][1] * other[(1, 1)];
+    }
+}
+
+impl MulAssign<f32> for Matrix2 {
+    fn mul_assign(&mut self, rhs: f32) {
+        self.elements[0][0] *= rhs;
+        self.elements[1][0] *= rhs;
+        self.elements[0][1] *= rhs;
+        self.elements[1][1] *= rhs;
+    }
+}
+
 impl Div<f32> for Matrix2 {
     type Output = Self;
 
@@ -130,5 +148,20 @@ impl Div<f32> for Matrix2 {
             self.elements[0][1] / rhs,
             self.elements[1][1] / rhs,
         )
+    }
+}
+
+impl DivAssign<f32> for Matrix2 {
+    fn div_assign(&mut self, rhs: f32) {
+        self.elements[0][0] /= rhs;
+        self.elements[1][0] /= rhs;
+        self.elements[0][1] /= rhs;
+        self.elements[1][1] /= rhs;
+    }
+}
+
+impl Default for Matrix2 {
+    fn default() -> Matrix2 {
+        Matrix2::new(0, 0, 0, 0)
     }
 }

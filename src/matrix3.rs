@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use std::ops::{Div, Index, IndexMut, Mul};
+use std::ops::{Div, DivAssign, Index, IndexMut, Mul, MulAssign};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Matrix3 {
@@ -7,17 +7,17 @@ pub struct Matrix3 {
 }
 
 impl Matrix3 {
-    fn new(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32, g: f32, h: f32, i: f32) -> Matrix3 {
+    pub fn new(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32, g: f32, h: f32, i: f32) -> Matrix3 {
         let elements: [[f32; 3]; 3] = [[a, d, g], [b, e, h], [c, f, i]];
         Self { elements }
     }
 
-    fn new_with_vecs(a: &Vector3, b: &Vector3, c: &Vector3) -> Matrix3 {
+    pub fn new_with_vecs(a: &Vector3, b: &Vector3, c: &Vector3) -> Matrix3 {
         let elements: [[f32; 3]; 3] = [[a.x, b.x, c.x], [b.y, b.y, c.y], [c.z, b.z, c.z]];
         Self { elements }
     }
 
-    fn vec_at(&self, index: usize) -> Vector3 {
+    pub fn vec_at(&self, index: usize) -> Vector3 {
         Vector3::new(
             self.elements[index][0],
             self.elements[index][1],
@@ -25,7 +25,7 @@ impl Matrix3 {
         )
     }
 
-    fn determinant(&self) -> f32 {
+    pub fn determinant(&self) -> f32 {
         (self.elements[0][0] * self.elements[1][1] * self.elements[2][2]
             - self.elements[2][1] * self.elements[1][2])
             - self.elements[1][0]
@@ -36,7 +36,7 @@ impl Matrix3 {
                     - self.elements[1][1] * self.elements[0][2])
     }
 
-    fn inverse(&self) -> Matrix3 {
+    pub fn inverse(&self) -> Matrix3 {
         let a = self.vec_at(0);
         let b = self.vec_at(1);
         let c = self.vec_at(2);
@@ -131,6 +131,47 @@ impl Matrix3 {
             z * b.x + 1.0,
             z * b.y,
             z * b.z,
+        )
+    }
+
+    fn make_scale_vec(s: f32, a: &Vector3) -> Matrix3 {
+        let ss = s - 1.0;
+        let x = a.x * ss;
+        let y = a.y * ss;
+        let z = a.z * ss;
+        let axay = x * a.y;
+        let axaz = x * a.z;
+        let ayaz = y * a.z;
+        Self::new(
+            x * a.x + 1.0,
+            axay,
+            axaz,
+            axay,
+            y * a.y + 1.0,
+            ayaz,
+            axaz,
+            ayaz,
+            z * a.z + 1.0,
+        )
+    }
+
+    fn make_involution(a: &Vector3) -> Matrix3 {
+        let x = a.x * 2.0;
+        let y = a.y * 2.0;
+        let z = a.z * 2.0;
+        let axay = x * a.y;
+        let axaz = x * a.z;
+        let ayaz = y * a.z;
+        Self::new(
+            x * a.x - 1.0,
+            axay,
+            axaz,
+            axay,
+            y * a.y - 1.0,
+            ayaz,
+            axaz,
+            ayaz,
+            z * a.z - 1.0,
         )
     }
 
@@ -245,6 +286,52 @@ impl Mul<Matrix3> for Matrix3 {
     }
 }
 
+impl MulAssign<Matrix3> for Matrix3 {
+    fn mul_assign(&mut self, other: Matrix3) {
+        self.elements[0][0] = self.elements[0][0] * other[(0, 0)]
+            + self.elements[1][0] * other[(1, 0)]
+            + self.elements[2][0] * other[(2, 0)];
+        self.elements[1][0] = self.elements[0][0] * other[(0, 1)]
+            + self.elements[1][0] * other[(1, 1)]
+            + self.elements[2][0] * other[(2, 1)];
+        self.elements[2][0] = self.elements[0][0] * other[(0, 2)]
+            + self.elements[1][0] * other[(1, 2)]
+            + self.elements[2][0] * other[(2, 2)];
+        self.elements[1][0] = self.elements[0][1] * other[(0, 0)]
+            + self.elements[1][1] * other[(1, 0)]
+            + self.elements[2][1] * other[(2, 0)];
+        self.elements[1][1] = self.elements[0][1] * other[(0, 1)]
+            + self.elements[1][1] * other[(1, 1)]
+            + self.elements[2][1] * other[(2, 1)];
+        self.elements[1][2] = self.elements[0][1] * other[(0, 2)]
+            + self.elements[1][1] * other[(1, 2)]
+            + self.elements[2][1] * other[(2, 2)];
+        self.elements[2][0] = self.elements[0][2] * other[(0, 0)]
+            + self.elements[1][2] * other[(1, 0)]
+            + self.elements[2][2] * other[(2, 0)];
+        self.elements[2][1] = self.elements[1][2] * other[(0, 1)]
+            + self.elements[1][2] * other[(1, 1)]
+            + self.elements[2][2] * other[(2, 1)];
+        self.elements[2][2] = self.elements[1][2] * other[(0, 2)]
+            + self.elements[1][2] * other[(1, 2)]
+            + self.elements[2][2] * other[(2, 2)];
+    }
+}
+
+impl MulAssign<f32> for Matrix3 {
+    fn mul_assign(&mut self, rhs: f32) {
+        self.elements[0][0] *= rhs;
+        self.elements[1][0] *= rhs;
+        self.elements[2][0] *= rhs;
+        self.elements[0][1] *= rhs;
+        self.elements[1][1] *= rhs;
+        self.elements[2][1] *= rhs;
+        self.elements[0][2] *= rhs;
+        self.elements[1][2] *= rhs;
+        self.elements[2][2] *= rhs;
+    }
+}
+
 impl Div<f32> for Matrix3 {
     type Output = Self;
 
@@ -261,5 +348,25 @@ impl Div<f32> for Matrix3 {
             self.elements[1][2] / s,
             self.elements[2][2] / s,
         )
+    }
+}
+
+impl DivAssign<f32> for Matrix3 {
+    fn div_assign(&mut self, rhs: f32) {
+        self.elements[0][0] /= rhs;
+        self.elements[1][0] /= rhs;
+        self.elements[2][0] /= rhs;
+        self.elements[0][1] /= rhs;
+        self.elements[1][1] /= rhs;
+        self.elements[2][1] /= rhs;
+        self.elements[0][2] /= rhs;
+        self.elements[1][2] /= rhs;
+        self.elements[2][2] /= rhs;
+    }
+}
+
+impl Default for Matrix3 {
+    fn default() -> Matrix3 {
+        Matrix3::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     }
 }

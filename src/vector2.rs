@@ -158,8 +158,34 @@ impl Default for Vector2 {
     }
 }
 
+impl Mul<Matrix4> for Vector2 {
+    type Output = Vector4;
+
+    fn mul(self, rhs: Matrix4) -> Self::Output {
+        Vector4::new(
+            rhs[(0, 0)] * self.x + rhs[(0, 1)] * self.y,
+            rhs[(0, 1)] * self.x + rhs[(1, 1)] * self.y,
+            rhs[(0, 2)] * self.x + rhs[(1, 2)] * self.y,
+            rhs[(0, 3)] * self.x + rhs[(1, 3)] * self.y,
+        )
+    }
+}
+
 impl Default for Point2 {
     fn default() -> Point2 {
         Point2 { x: 0.0, y: 0.0 }
+    }
+}
+
+impl Mul<Matrix4> for Point2 {
+    type Output = Vector4;
+
+    fn mul(self, rhs: Matrix4) -> Self::Output {
+        Vector4::new(
+            rhs[(0, 0)] * self.x + rhs[(0, 1)] * self.y + rhs[(3, 0)],
+            rhs[(0, 1)] * self.x + rhs[(1, 1)] * self.y + rhs[(3, 1)],
+            rhs[(0, 2)] * self.x + rhs[(1, 2)] * self.y + rhs[(3, 2)],
+            rhs[(0, 3)] * self.x + rhs[(1, 3)] * self.y + rhs[(3, 3)],
+        )
     }
 }
