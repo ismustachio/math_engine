@@ -265,3 +265,23 @@ pub fn plane_line_intersect(p: &Point3, v: &Vector3, f: &Plane, mut q: Point3) -
         false
     }
 }
+
+impl From<Point3> for Vector3 {
+    fn from(p: Point3) -> Self {
+        Vector3 {
+            x: p.x,
+            y: p.y,
+            z: p.z,
+        }
+    }
+}
+
+impl From<Vector3> for Point3 {
+    fn from(p: Vector3) -> Self {
+        Point3 {
+            x: p.x,
+            y: p.y,
+            z: p.z,
+        }
+    }
+}

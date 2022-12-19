@@ -18,11 +18,7 @@ impl Matrix3 {
     }
 
     pub fn vec_at(&self, index: usize) -> Vector3 {
-        Vector3::new(
-            self.elements[index][0],
-            self.elements[index][1],
-            self.elements[index][2],
-        )
+        self[index]
     }
 
     pub fn determinant(&self) -> f32 {
@@ -213,6 +209,20 @@ impl Matrix3 {
     }
 }
 
+impl Index<usize> for Matrix3 {
+    type Output = Vector3;
+    fn index(&self, row: usize) -> &Self::Output {
+        if row > 3 {
+            panic!("Index out of bounds");
+        }
+        &Vector3::new(
+            self.elements[0][row],
+            self.elements[1][row],
+            self.elements[2][row],
+        )
+    }
+}
+
 impl Index<(usize, usize)> for Matrix3 {
     type Output = f32;
     fn index(&self, (row, col): (usize, usize)) -> &Self::Output {
@@ -367,6 +377,8 @@ impl DivAssign<f32> for Matrix3 {
 
 impl Default for Matrix3 {
     fn default() -> Matrix3 {
-        Matrix3::new(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        Matrix3 {
+            elements: Default::default(),
+        }
     }
 }

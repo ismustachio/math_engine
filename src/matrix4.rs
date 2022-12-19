@@ -137,7 +137,7 @@ impl Mul<Point3> for Matrix4 {
 impl Mul<Point2> for Matrix4 {
     type Output = Vector4;
 
-    fn mul(self, rhs: Point3) -> Self::Output {
+    fn mul(self, rhs: Point2) -> Self::Output {
         Vector4::new(self.elements[0][0] * rhs.x + self.elements[1][0] * rhs.y + self.elements[3][0],
                      self.elements[0][1] * rhs.x + self.elements[1][1] * rhs.y + self.elements[3][1],
                      self.elements[0][2] * rhs.x + self.elements[1][2] * rhs.y + self.elements[3][2],
@@ -381,6 +381,6 @@ impl DivAssign<f32> for Matrix4 {
 
 impl Default for Matrix4 {
     fn default() -> Matrix4 {
-        Matrix4::new(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)
+        Matrix4 { ..Default::default() }
     }
 }

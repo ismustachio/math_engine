@@ -85,7 +85,7 @@ impl Quarternion {
     fn transform(&self, v: &Vector3) -> Vector3 {
         let b = self.get_vector_part();
         let b2 = b.x * b.x + b.y * b.y + b.z * b.z;
-        (*v * (self.w * self.w - b2) + b * (v.dot(&b) * 2.0) + b.cross(&v) * (self.w * 2.0))
+        *v * (self.w * self.w - b2) + b * (v.dot(&b) * 2.0) + b.cross(&v) * (self.w * 2.0)
     }
 }
 

@@ -1,5 +1,5 @@
-use std::ops::{Div, DivAssign, Index, IndexMut, Mul, MulAssign};
 use crate::prelude::*;
+use std::ops::{Div, DivAssign, Index, IndexMut, Mul, MulAssign};
 
 pub struct Plane {
     pub x: f32,
@@ -50,33 +50,32 @@ impl Mul<Transform4> for Plane {
 
 // calculates the point p at which three planes f1, f2, and f3 intersect and returns
 // true if such a point exists. Returns false if the normal vectors are not linearly independent
-pub fn three_planes_intersect(f1: &Plane, f2: &Plane, f3: &Plane, &mut p: Point3) -> bool {
+pub fn three_planes_intersect(f1: &Plane, f2: &Plane, f3: &Plane) -> Option<Point3> {
     let n1 = f1.get_normal();
     let n2 = f2.get_normal();
     let n3 = f3.get_normal();
     let n1xn2 = n1.cross(&n2);
     let det = n1xn2.dot(&n3);
-    if det.fabs() > f32::MIN {
-        p = (n3.cross(&n2) * f1.w + n1.cross(&n3) * f2.w - n1xn2 * f3.w) / det;
-        true
-    } else {
-        false
+    if det.abs() <= f32::MIN {
+        return None;
     }
+    Some(Point3::from(
+        n3.cross(&n2) * f1.w + n1.cross(&n3) * f2.w - n1xn2 * f3.w / det,
+    ))
 }
 
 // calculates the line determined by the point p and the direction v at which
 // two planes f1 and f2 intersect and returns true if it exists. Returns false
 // if the normal vectors are parallel.
-pub fn two_planes_intersect(f1: &Plane, f2: &Plane, &mut p: Point3, &mut v: Vector3) -> bool {
+pub fn two_planes_intersect(f1: &Plane, f2: &Plane, v: &Vector3) -> Option<Point3> {
     let n1 = f1.get_normal();
     let n2 = f2.get_normal();
 
-    v = n1.cross(&n2);
-    let det = v.dot(v);
-    if det.fabs() > f32::MIN {
-        p = (v.cross(&n2) * f1.w + n1.cross(v) * f2.w) / det;
-        true
-    } else {
-        false
+    let det = n1.cross(&n2).dot(v);
+    if det.abs() <= f32::MIN {
+        return None;
     }
+    Some(Point3::from(
+        (v.cross(&n2) * f1.w + n1.cross(v) * f2.w) / det,
+    ))
 }
