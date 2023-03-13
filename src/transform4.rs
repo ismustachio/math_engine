@@ -1,9 +1,9 @@
 use crate::prelude::*;
 use std::ops::{Div, DivAssign, Index, IndexMut, Mul, MulAssign};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Default, Copy, Clone, Debug)]
 pub struct Transform4 {
-    elements: [[f32; 4]; 4],
+    n: [Vector3; 4],
 }
 
 impl Transform4 {
@@ -21,60 +21,42 @@ impl Transform4 {
         k: f32,
         l: f32,
     ) -> Transform4 {
-        let elements: [[f32; 4]; 4] = [
-            [a, e, i, 0.0],
-            [b, f, j, 0.0],
-            [c, g, k, 0.0],
-            [d, h, l, 1.0],
+        let n: [Vector3; 4] = [
+            Vector3::new(a, e, i),
+            Vector3::new(b, f, j),
+            Vector3::new(c, g, k),
+            Vector3::new(d, h, l),
         ];
-        Self { elements }
+        Self { n }
     }
 
-    pub fn new_with_vecs(a: &Vector3, b: &Vector3, c: &Vector3, p: &Point3) -> Transform4 {
-        let elements: [[f32; 4]; 4] = [
-            [a.x, a.y, a.z, 0.0],
-            [b.x, b.y, b.z, 0.0],
-            [c.x, c.y, c.z, 0.0],
-            [p.x, p.y, p.z, 0.0],
-        ];
-        Self { elements }
+    pub fn new_with_vecs(a: Vector3, b: Vector3, c: Vector3, p: Point3) -> Transform4 {
+        let n: [Vector3; 4] = [a, b, c, Vector3::new(p.x, p.y, p.z)];
+        Self { n }
     }
 
-    pub fn vec_at(&self, index: usize) -> Vector3 {
-        if index > 4 {
-            panic!("index out of bounds");
-        }
-        Vector3::new(
-            self.elements[index][0],
-            self.elements[index][1],
-            self.elements[index][2],
-        )
+    pub fn vec_at(&self, i: usize) -> Vector3 {
+        self[i]
+    }
+
+    pub fn at(&self, i: usize, j: usize) -> f32 {
+        self[j][i]
     }
 
     pub fn get_translation(&self) -> Point3 {
-        Point3::new(
-            self.elements[0][3],
-            self.elements[1][3],
-            self.elements[2][3],
-        )
+        Point3::new(self.n[0][3], self.n[1][3], self.n[2][3])
     }
 
     pub fn set_translation(&mut self, p: &Point3) {
-        self.elements[3][0] = p.x;
-        self.elements[3][1] = p.y;
-        self.elements[3][2] = p.z;
+        self.n[3][0] = p.x;
+        self.n[3][1] = p.y;
+        self.n[3][2] = p.z;
     }
 
     pub fn determinant(&self) -> f32 {
-        self.elements[0][0]
-            * (self.elements[1][1] * self.elements[2][2]
-                - self.elements[2][1] * self.elements[1][2])
-            - self.elements[1][0]
-                * (self.elements[0][1] * self.elements[2][2]
-                    - self.elements[2][1] * self.elements[0][2])
-            + self.elements[2][0]
-                * (self.elements[0][1] * self.elements[1][2]
-                    - self.elements[1][1] * self.elements[0][2])
+        self.n[0][0] * (self.n[1][1] * self.n[2][2] - self.n[2][1] * self.n[1][2])
+            - self.n[1][0] * (self.n[0][1] * self.n[2][2] - self.n[2][1] * self.n[0][2])
+            + self.n[2][0] * (self.n[0][1] * self.n[1][2] - self.n[1][1] * self.n[0][2])
     }
 
     pub fn inverse(&self) -> Transform4 {
@@ -296,17 +278,11 @@ impl Transform4 {
 impl Mul<Vector3> for Transform4 {
     type Output = Vector3;
 
-    fn mul(self, other: Vector3) -> Self::Output {
+    fn mul(self, rhs: Vector3) -> Self::Output {
         Vector3::new(
-            self.elements[0][0] * other.x
-                + self.elements[1][0] * other.y
-                + self.elements[2][0] * other.z,
-            self.elements[0][1] * other.x
-                + self.elements[1][1] * other.y
-                + self.elements[2][1] * other.z,
-            self.elements[0][2] * other.x
-                + self.elements[1][2] * other.y
-                + self.elements[2][2] * other.z,
+            self.n[0][0] * rhs.x + self.n[1][0] * rhs.y + self.n[2][0] * rhs.z,
+            self.n[0][1] * rhs.x + self.n[1][1] * rhs.y + self.n[2][1] * rhs.z,
+            self.n[0][2] * rhs.x + self.n[1][2] * rhs.y + self.n[2][2] * rhs.z,
         )
     }
 }
@@ -314,20 +290,11 @@ impl Mul<Vector3> for Transform4 {
 impl Mul<Point3> for Transform4 {
     type Output = Point3;
 
-    fn mul(self, other: Point3) -> Self::Output {
+    fn mul(self, rhs: Point3) -> Self::Output {
         Point3::new(
-            self.elements[0][0] * other.x
-                + self.elements[1][0] * other.y
-                + self.elements[2][0] * other.z
-                + self.elements[3][0],
-            self.elements[0][1] * other.x
-                + self.elements[1][1] * other.y
-                + self.elements[2][1] * other.z
-                + self.elements[3][1],
-            self.elements[0][2] * other.x
-                + self.elements[1][2] * other.y
-                + self.elements[2][2] * other.z
-                + self.elements[3][2],
+            self.n[0][0] * rhs.x + self.n[1][0] * rhs.y + self.n[2][0] * rhs.z + self.n[3][0],
+            self.n[0][1] * rhs.x + self.n[1][1] * rhs.y + self.n[2][1] * rhs.z + self.n[3][1],
+            self.n[0][2] * rhs.x + self.n[1][2] * rhs.y + self.n[2][2] * rhs.z + self.n[3][2],
         )
     }
 }
@@ -337,33 +304,15 @@ impl Mul<Matrix3> for Transform4 {
 
     fn mul(self, rhs: Matrix3) -> Self::Output {
         Matrix3::new(
-            self.elements[0][0] * rhs[(0, 0)]
-                + self.elements[1][0] * rhs[(1, 0)]
-                + self.elements[2][0] * rhs[(2, 0)],
-            self.elements[0][0] * rhs[(0, 1)]
-                + self.elements[1][0] * rhs[(1, 1)]
-                + self.elements[2][0] * rhs[(2, 1)],
-            self.elements[0][0] * rhs[(0, 2)]
-                + self.elements[1][0] * rhs[(1, 2)]
-                + self.elements[2][0] * rhs[(2, 2)],
-            self.elements[0][0] * rhs[(0, 0)]
-                + self.elements[1][1] * rhs[(1, 0)]
-                + self.elements[2][1] * rhs[(2, 0)],
-            self.elements[0][0] * rhs[(0, 1)]
-                + self.elements[1][1] * rhs[(1, 1)]
-                + self.elements[2][1] * rhs[(2, 1)],
-            self.elements[0][0] * rhs[(0, 2)]
-                + self.elements[1][1] * rhs[(1, 2)]
-                + self.elements[2][1] * rhs[(2, 2)],
-            self.elements[0][0] * rhs[(0, 0)]
-                + self.elements[1][2] * rhs[(1, 0)]
-                + self.elements[2][2] * rhs[(2, 0)],
-            self.elements[0][0] * rhs[(0, 1)]
-                + self.elements[1][2] * rhs[(1, 1)]
-                + self.elements[2][2] * rhs[(2, 1)],
-            self.elements[0][0] * rhs[(0, 2)]
-                + self.elements[1][2] * rhs[(1, 2)]
-                + self.elements[2][2] * rhs[(2, 2)],
+            self.n[0][0] * rhs[(0, 0)] + self.n[1][0] * rhs[(1, 0)] + self.n[2][0] * rhs[(2, 0)],
+            self.n[0][0] * rhs[(0, 1)] + self.n[1][0] * rhs[(1, 1)] + self.n[2][0] * rhs[(2, 1)],
+            self.n[0][0] * rhs[(0, 2)] + self.n[1][0] * rhs[(1, 2)] + self.n[2][0] * rhs[(2, 2)],
+            self.n[0][0] * rhs[(0, 0)] + self.n[1][1] * rhs[(1, 0)] + self.n[2][1] * rhs[(2, 0)],
+            self.n[0][0] * rhs[(0, 1)] + self.n[1][1] * rhs[(1, 1)] + self.n[2][1] * rhs[(2, 1)],
+            self.n[0][0] * rhs[(0, 2)] + self.n[1][1] * rhs[(1, 2)] + self.n[2][1] * rhs[(2, 2)],
+            self.n[0][0] * rhs[(0, 0)] + self.n[1][2] * rhs[(1, 0)] + self.n[2][2] * rhs[(2, 0)],
+            self.n[0][0] * rhs[(0, 1)] + self.n[1][2] * rhs[(1, 1)] + self.n[2][2] * rhs[(2, 1)],
+            self.n[0][0] * rhs[(0, 2)] + self.n[1][2] * rhs[(1, 2)] + self.n[2][2] * rhs[(2, 2)],
         )
     }
 }
@@ -373,8 +322,8 @@ impl Mul<Vector2> for Transform4 {
 
     fn mul(self, rhs: Vector2) -> Self::Output {
         Vector2::new(
-            self.elements[0][0] * rhs.x + self.elements[1][0] * rhs.y,
-            self.elements[0][1] * rhs.x + self.elements[1][1] * rhs.y,
+            self.n[0][0] * rhs.x + self.n[1][0] * rhs.y,
+            self.n[0][1] * rhs.x + self.n[1][1] * rhs.y,
         )
     }
 }
@@ -384,8 +333,8 @@ impl Mul<Point2> for Transform4 {
 
     fn mul(self, rhs: Point2) -> Self::Output {
         Vector2::new(
-            self.elements[0][0] * rhs.x + self.elements[1][0] * rhs.y + self.elements[3][0],
-            self.elements[0][1] * rhs.x + self.elements[1][1] * rhs.y + self.elements[3][1],
+            self.n[0][0] * rhs.x + self.n[1][0] * rhs.y + self.n[3][0],
+            self.n[0][1] * rhs.x + self.n[1][1] * rhs.y + self.n[3][1],
         )
     }
 }
@@ -393,47 +342,29 @@ impl Mul<Point2> for Transform4 {
 impl Mul<Transform4> for Transform4 {
     type Output = Self;
 
-    fn mul(self, other: Transform4) -> Self::Output {
+    fn mul(self, rhs: Transform4) -> Self::Output {
         Self::new(
-            self.elements[0][0] * other[(0, 0)]
-                + self.elements[1][0] * other[(1, 0)]
-                + self.elements[2][0] * other[(2, 0)],
-            self.elements[0][0] * other[(0, 1)]
-                + self.elements[1][0] * other[(1, 1)]
-                + self.elements[2][0] * other[(2, 1)],
-            self.elements[0][0] * other[(0, 2)]
-                + self.elements[1][0] * other[(1, 2)]
-                + self.elements[2][0] * other[(2, 2)],
-            self.elements[0][0] * other[(0, 3)]
-                + self.elements[1][0] * other[(1, 3)]
-                + self.elements[2][0] * other[(2, 3)]
-                + self.elements[3][0],
-            self.elements[0][1] * other[(0, 0)]
-                + self.elements[1][1] * other[(1, 0)]
-                + self.elements[2][1] * other[(2, 0)],
-            self.elements[0][1] * other[(0, 1)]
-                + self.elements[1][1] * other[(1, 1)]
-                + self.elements[2][1] * other[(2, 1)],
-            self.elements[0][1] * other[(0, 2)]
-                + self.elements[1][1] * other[(1, 2)]
-                + self.elements[2][1] * other[(2, 2)],
-            self.elements[0][1] * other[(0, 3)]
-                + self.elements[1][0] * other[(1, 3)]
-                + self.elements[2][0] * other[(2, 3)]
-                + self.elements[3][1],
-            self.elements[0][2] * other[(0, 0)]
-                + self.elements[1][2] * other[(1, 0)]
-                + self.elements[2][2] * other[(2, 0)],
-            self.elements[0][2] * other[(0, 1)]
-                + self.elements[1][2] * other[(1, 1)]
-                + self.elements[2][2] * other[(2, 1)],
-            self.elements[0][2] * other[(0, 2)]
-                + self.elements[1][2] * other[(1, 2)]
-                + self.elements[2][2] * other[(2, 2)],
-            self.elements[0][2] * other[(0, 3)]
-                + self.elements[1][0] * other[(1, 3)]
-                + self.elements[2][0] * other[(2, 3)]
-                + self.elements[3][2],
+            self.n[0][0] * rhs[(0, 0)] + self.n[1][0] * rhs[(1, 0)] + self.n[2][0] * rhs[(2, 0)],
+            self.n[0][0] * rhs[(0, 1)] + self.n[1][0] * rhs[(1, 1)] + self.n[2][0] * rhs[(2, 1)],
+            self.n[0][0] * rhs[(0, 2)] + self.n[1][0] * rhs[(1, 2)] + self.n[2][0] * rhs[(2, 2)],
+            self.n[0][0] * rhs[(0, 3)]
+                + self.n[1][0] * rhs[(1, 3)]
+                + self.n[2][0] * rhs[(2, 3)]
+                + self.n[3][0],
+            self.n[0][1] * rhs[(0, 0)] + self.n[1][1] * rhs[(1, 0)] + self.n[2][1] * rhs[(2, 0)],
+            self.n[0][1] * rhs[(0, 1)] + self.n[1][1] * rhs[(1, 1)] + self.n[2][1] * rhs[(2, 1)],
+            self.n[0][1] * rhs[(0, 2)] + self.n[1][1] * rhs[(1, 2)] + self.n[2][1] * rhs[(2, 2)],
+            self.n[0][1] * rhs[(0, 3)]
+                + self.n[1][0] * rhs[(1, 3)]
+                + self.n[2][0] * rhs[(2, 3)]
+                + self.n[3][1],
+            self.n[0][2] * rhs[(0, 0)] + self.n[1][2] * rhs[(1, 0)] + self.n[2][2] * rhs[(2, 0)],
+            self.n[0][2] * rhs[(0, 1)] + self.n[1][2] * rhs[(1, 1)] + self.n[2][2] * rhs[(2, 1)],
+            self.n[0][2] * rhs[(0, 2)] + self.n[1][2] * rhs[(1, 2)] + self.n[2][2] * rhs[(2, 2)],
+            self.n[0][2] * rhs[(0, 3)]
+                + self.n[1][0] * rhs[(1, 3)]
+                + self.n[2][0] * rhs[(2, 3)]
+                + self.n[3][2],
         )
     }
 }
@@ -441,19 +372,30 @@ impl Mul<Transform4> for Transform4 {
 impl Index<(usize, usize)> for Transform4 {
     type Output = f32;
     fn index(&self, (row, col): (usize, usize)) -> &Self::Output {
-        if row > 4 || col > 4 {
-            panic!("Index out of bounds");
-        }
-        &self.elements[col][row]
+        assert!(col < 4 && row < 4);
+        &self.n[col][row]
     }
 }
 
 impl IndexMut<(usize, usize)> for Transform4 {
     fn index_mut(&mut self, (row, col): (usize, usize)) -> &mut f32 {
-        if row > 4 || col > 4 {
-            panic!("Index out of bounds");
-        }
-        &mut self.elements[col][row]
+        assert!(col < 4 && row < 4);
+        &mut self.n[col][row]
+    }
+}
+
+impl Index<usize> for Transform4 {
+    type Output = Vector3;
+    fn index(&self, col: usize) -> &Self::Output {
+        assert!(col < 4);
+        &self.n[col]
+    }
+}
+
+impl IndexMut<usize> for Transform4 {
+    fn index_mut(&mut self, col: usize) -> &mut Vector3 {
+        assert!(col < 4);
+        &mut self.n[col]
     }
 }
 
@@ -462,96 +404,87 @@ impl Div<f32> for Transform4 {
 
     fn div(self, rhs: f32) -> Self::Output {
         Self::new(
-            self.elements[0][0] / rhs,
-            self.elements[1][0] / rhs,
-            self.elements[2][0] / rhs,
-            self.elements[3][0] / rhs,
-            self.elements[0][1] / rhs,
-            self.elements[1][1] / rhs,
-            self.elements[2][1] / rhs,
-            self.elements[3][1] / rhs,
-            self.elements[0][2] / rhs,
-            self.elements[1][2] / rhs,
-            self.elements[2][2] / rhs,
-            self.elements[3][2] / rhs,
+            self.n[0][0] / rhs,
+            self.n[1][0] / rhs,
+            self.n[2][0] / rhs,
+            self.n[3][0] / rhs,
+            self.n[0][1] / rhs,
+            self.n[1][1] / rhs,
+            self.n[2][1] / rhs,
+            self.n[3][1] / rhs,
+            self.n[0][2] / rhs,
+            self.n[1][2] / rhs,
+            self.n[2][2] / rhs,
+            self.n[3][2] / rhs,
         )
     }
 }
 
 impl DivAssign<f32> for Transform4 {
     fn div_assign(&mut self, rhs: f32) {
-        self.elements[0][0] /= rhs;
-        self.elements[1][0] /= rhs;
-        self.elements[2][0] /= rhs;
-        self.elements[3][0] /= rhs;
-        self.elements[0][1] /= rhs;
-        self.elements[1][1] /= rhs;
-        self.elements[2][1] /= rhs;
-        self.elements[3][1] /= rhs;
-        self.elements[0][2] /= rhs;
-        self.elements[1][2] /= rhs;
-        self.elements[2][2] /= rhs;
-        self.elements[3][2] /= rhs;
+        self.n[0][0] /= rhs;
+        self.n[1][0] /= rhs;
+        self.n[2][0] /= rhs;
+        self.n[3][0] /= rhs;
+        self.n[0][1] /= rhs;
+        self.n[1][1] /= rhs;
+        self.n[2][1] /= rhs;
+        self.n[3][1] /= rhs;
+        self.n[0][2] /= rhs;
+        self.n[1][2] /= rhs;
+        self.n[2][2] /= rhs;
+        self.n[3][2] /= rhs;
     }
 }
 
 impl MulAssign<Transform4> for Transform4 {
-    fn mul_assign(&mut self, other: Transform4) {
-        self.elements[0][0] = self.elements[0][0] * other[(0, 0)]
-            + self.elements[1][0] * other[(1, 0)]
-            + self.elements[2][0] * other[(2, 0)];
-        self.elements[1][0] = self.elements[0][0] * other[(0, 1)]
-            + self.elements[1][0] * other[(1, 1)]
-            + self.elements[2][0] * other[(2, 1)];
-        self.elements[2][0] = self.elements[0][0] * other[(0, 2)]
-            + self.elements[1][0] * other[(1, 2)]
-            + self.elements[2][0] * other[(2, 2)];
-        self.elements[3][0] = self.elements[0][0] * other[(0, 3)]
-            + self.elements[1][0] * other[(1, 3)]
-            + self.elements[2][0] * other[(2, 3)]
-            + self.elements[3][0];
-        self.elements[0][1] = self.elements[0][1] * other[(0, 0)]
-            + self.elements[1][1] * other[(1, 0)]
-            + self.elements[2][1] * other[(2, 0)];
-        self.elements[1][1] = self.elements[0][1] * other[(0, 1)]
-            + self.elements[1][1] * other[(1, 1)]
-            + self.elements[2][1] * other[(2, 1)];
-        self.elements[2][1] = self.elements[0][1] * other[(0, 2)]
-            + self.elements[1][1] * other[(1, 2)]
-            + self.elements[2][1] * other[(2, 2)];
-        self.elements[3][1] = self.elements[0][1] * other[(0, 3)]
-            + self.elements[1][0] * other[(1, 3)]
-            + self.elements[2][0] * other[(2, 3)]
-            + self.elements[3][1];
-        self.elements[0][2] = self.elements[0][2] * other[(0, 0)]
-            + self.elements[1][2] * other[(1, 0)]
-            + self.elements[2][2] * other[(2, 0)];
-        self.elements[1][2] = self.elements[0][2] * other[(0, 1)]
-            + self.elements[1][2] * other[(1, 1)]
-            + self.elements[2][2] * other[(2, 1)];
-        self.elements[2][2] = self.elements[0][2] * other[(0, 2)]
-            + self.elements[1][2] * other[(1, 2)]
-            + self.elements[2][2] * other[(2, 2)];
-        self.elements[3][2] = self.elements[0][2] * other[(0, 3)]
-            + self.elements[1][0] * other[(1, 3)]
-            + self.elements[2][0] * other[(2, 3)]
-            + self.elements[3][2];
+    fn mul_assign(&mut self, rhs: Transform4) {
+        self.n[0][0] =
+            self.n[0][0] * rhs[(0, 0)] + self.n[1][0] * rhs[(1, 0)] + self.n[2][0] * rhs[(2, 0)];
+        self.n[1][0] =
+            self.n[0][0] * rhs[(0, 1)] + self.n[1][0] * rhs[(1, 1)] + self.n[2][0] * rhs[(2, 1)];
+        self.n[2][0] =
+            self.n[0][0] * rhs[(0, 2)] + self.n[1][0] * rhs[(1, 2)] + self.n[2][0] * rhs[(2, 2)];
+        self.n[3][0] = self.n[0][0] * rhs[(0, 3)]
+            + self.n[1][0] * rhs[(1, 3)]
+            + self.n[2][0] * rhs[(2, 3)]
+            + self.n[3][0];
+        self.n[0][1] =
+            self.n[0][1] * rhs[(0, 0)] + self.n[1][1] * rhs[(1, 0)] + self.n[2][1] * rhs[(2, 0)];
+        self.n[1][1] =
+            self.n[0][1] * rhs[(0, 1)] + self.n[1][1] * rhs[(1, 1)] + self.n[2][1] * rhs[(2, 1)];
+        self.n[2][1] =
+            self.n[0][1] * rhs[(0, 2)] + self.n[1][1] * rhs[(1, 2)] + self.n[2][1] * rhs[(2, 2)];
+        self.n[3][1] = self.n[0][1] * rhs[(0, 3)]
+            + self.n[1][0] * rhs[(1, 3)]
+            + self.n[2][0] * rhs[(2, 3)]
+            + self.n[3][1];
+        self.n[0][2] =
+            self.n[0][2] * rhs[(0, 0)] + self.n[1][2] * rhs[(1, 0)] + self.n[2][2] * rhs[(2, 0)];
+        self.n[1][2] =
+            self.n[0][2] * rhs[(0, 1)] + self.n[1][2] * rhs[(1, 1)] + self.n[2][2] * rhs[(2, 1)];
+        self.n[2][2] =
+            self.n[0][2] * rhs[(0, 2)] + self.n[1][2] * rhs[(1, 2)] + self.n[2][2] * rhs[(2, 2)];
+        self.n[3][2] = self.n[0][2] * rhs[(0, 3)]
+            + self.n[1][0] * rhs[(1, 3)]
+            + self.n[2][0] * rhs[(2, 3)]
+            + self.n[3][2];
     }
 }
 
 impl MulAssign<f32> for Transform4 {
     fn mul_assign(&mut self, rhs: f32) {
-        self.elements[0][0] *= rhs;
-        self.elements[1][0] *= rhs;
-        self.elements[2][0] *= rhs;
-        self.elements[3][0] *= rhs;
-        self.elements[0][1] *= rhs;
-        self.elements[1][1] *= rhs;
-        self.elements[2][1] *= rhs;
-        self.elements[3][1] *= rhs;
-        self.elements[0][2] *= rhs;
-        self.elements[1][2] *= rhs;
-        self.elements[2][2] *= rhs;
-        self.elements[3][2] *= rhs;
+        self.n[0][0] *= rhs;
+        self.n[1][0] *= rhs;
+        self.n[2][0] *= rhs;
+        self.n[3][0] *= rhs;
+        self.n[0][1] *= rhs;
+        self.n[1][1] *= rhs;
+        self.n[2][1] *= rhs;
+        self.n[3][1] *= rhs;
+        self.n[0][2] *= rhs;
+        self.n[1][2] *= rhs;
+        self.n[2][2] *= rhs;
+        self.n[3][2] *= rhs;
     }
 }

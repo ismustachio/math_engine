@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(Default, Copy, Clone, Debug)]
 pub struct Line {
     direction: Vector3,
     moment: Vector3,
@@ -24,12 +25,12 @@ impl Line {
         let v3 = h.vec_at(0).cross(&h.vec_at(1));
         // the transpose of the adjugate of the upper-left 3x3
         // portion of h because of the column-major order
-        let adj = Matrix3::new_with_vecs(&v1, &v2, &v3);
+        let adj = Matrix3::new_with_vecs(v1, v2, v3);
         let t = h.get_translation();
         let direction = *h * self.direction;
         // TODO: fix this
         let moment = adj * self.moment + Vector3::from(t).cross(&direction);
-        let moment = self.moment;
+        //let moment = self.moment;
         Line { direction, moment }
     }
 
@@ -37,14 +38,5 @@ impl Line {
         let l = self.transform(h);
         self.direction = l.direction;
         self.moment = l.moment;
-    }
-}
-
-impl Default for Line {
-    fn default() -> Line {
-        Line {
-            direction: Default::default(),
-            moment: Default::default(),
-        }
     }
 }

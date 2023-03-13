@@ -1,6 +1,7 @@
 use crate::prelude::*;
-use std::ops::{Div, DivAssign, Index, IndexMut, Mul, MulAssign};
+use std::ops::Mul;
 
+#[derive(Default, Copy, Clone, Debug)]
 pub struct Plane {
     pub x: f32,
     pub y: f32,

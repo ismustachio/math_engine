@@ -1,7 +1,6 @@
-use crate::prelude::*;
 use std::ops::{Add, Div, Index, IndexMut, Mul, MulAssign, Sub};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Default, Copy, Clone, Debug)]
 pub struct Vector4 {
     pub x: f32,
     pub y: f32,
@@ -14,55 +13,67 @@ impl Vector4 {
         Self { x, y, z, w }
     }
 
-    pub fn dot(&self, other: &Vector4) -> f32 {
-        self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+    pub fn dot(&self, rhs: &Vector4) -> f32 {
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z + self.w * rhs.w
     }
 
     pub fn magnitude(&self) -> f32 {
         ((self.x * self.x) + (self.y * self.y) + (self.z * self.z) + (self.w * self.w)).sqrt()
     }
 
-    pub fn project(&self, other: &Vector4) -> Vector4 {
-        *other * self.dot(other)
+    pub fn project(&self, rhs: &Vector4) -> Vector4 {
+        *rhs * self.dot(rhs)
     }
 
-    pub fn reject(&self, other: &Vector4) -> Vector4 {
-        *self - *other * self.dot(other)
+    pub fn reject(&self, rhs: &Vector4) -> Vector4 {
+        *self - *rhs * self.dot(rhs)
     }
 
     pub fn normalize(&self) -> Vector4 {
         *self / self.magnitude()
     }
+
+    pub fn normalize_mut(&mut self) {
+        let m = self.magnitude();
+        self.x /= m;
+        self.y /= m;
+        self.z /= m;
+        self.w /= m;
+    }
 }
 
 impl Index<usize> for Vector4 {
     type Output = f32;
-    fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            2 => &self.z,
-            3 => &self.w,
-            _ => panic!("Index out of bounds"),
+    fn index(&self, i: usize) -> &Self::Output {
+        assert!(i < 4);
+        if i == 0 {
+            return &self.x;
+        } else if i == 1 {
+            return &self.y;
+        } else if i == 2 {
+            return &self.z;
         }
+        &self.w
     }
 }
 
 impl IndexMut<usize> for Vector4 {
-    fn index_mut(&mut self, index: usize) -> &mut f32 {
-        match index {
-            0 => &mut self.x,
-            1 => &mut self.y,
-            2 => &mut self.z,
-            3 => &mut self.w,
-            _ => panic!("Index out of bounds"),
+    fn index_mut(&mut self, i: usize) -> &mut f32 {
+        assert!(i < 4);
+        if i == 0 {
+            return &mut self.x;
+        } else if i == 1 {
+            return &mut self.y;
+        } else if i == 2 {
+            return &mut self.z;
         }
+        &mut self.w
     }
 }
 
 impl PartialEq for Vector4 {
-    fn eq(&self, other: &Vector4) -> bool {
-        self.x == other.x && self.y == other.y && self.z == other.z && self.w == other.w
+    fn eq(&self, rhs: &Vector4) -> bool {
+        self.x == rhs.x && self.y == rhs.y && self.z == rhs.z && self.w == rhs.w
     }
 }
 
@@ -78,7 +89,12 @@ impl Mul<Vector4> for Vector4 {
     type Output = Self;
 
     fn mul(self, rhs: Vector4) -> Self::Output {
-        Self::new(self.x * rhs.x, self.y * rhs.y, self.z * rhs.z, self.w * rhs.w)
+        Self::new(
+            self.x * rhs.x,
+            self.y * rhs.y,
+            self.z * rhs.z,
+            self.w * rhs.w,
+        )
     }
 }
 
@@ -94,7 +110,12 @@ impl Add<Vector4> for Vector4 {
     type Output = Self;
 
     fn add(self, rhs: Vector4) -> Self::Output {
-        Self::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z, self.w + rhs.w)
+        Self::new(
+            self.x + rhs.x,
+            self.y + rhs.y,
+            self.z + rhs.z,
+            self.w + rhs.w,
+        )
     }
 }
 
@@ -102,7 +123,12 @@ impl Sub<Vector4> for Vector4 {
     type Output = Self;
 
     fn sub(self, rhs: Vector4) -> Self::Output {
-        Self::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z, self.w - rhs.w)
+        Self::new(
+            self.x - rhs.x,
+            self.y - rhs.y,
+            self.z - rhs.z,
+            self.w - rhs.w,
+        )
     }
 }
 
@@ -123,5 +149,3 @@ impl MulAssign<f32> for Vector4 {
         self.w *= rhs;
     }
 }
-
-
