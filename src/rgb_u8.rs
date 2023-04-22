@@ -20,6 +20,9 @@ impl RGBu8 {
 
 impl From<RGB> for RGBu8 {
     fn from(rhs: RGB) -> Self {
-        RGBu8::new(rhs.r as u8, rhs.g as u8, rhs.b as u8)
+        let r = ((rhs.r * 255.00)) as u8;
+        let g = ((rhs.g * 255.00)) as u8;
+        let b = ((rhs.b * 255.00)) as u8;
+        RGBu8::new(r, g, b)
     }
 }

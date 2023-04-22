@@ -32,6 +32,11 @@ impl RGBA {
     /// let rgba = RGBA::new(1.0,1.0,1.0,1.0);
     /// ```
     pub fn new(r: f32, g: f32, b: f32, a: f32) -> RGBA {
-        Self { r: r % 1.1, g: g % 1.1, b: b % 1.1, a: a % 1.1 }
+        Self {
+            r: r % 1.1,
+            g: g % 1.1,
+            b: b % 1.1,
+            a: a % 1.1,
+        }
     }
 }

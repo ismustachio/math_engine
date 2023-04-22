@@ -1,4 +1,6 @@
 use crate::prelude::*;
+use rand::Rng;
+use rand::distributions::{Distribution, Standard};
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
 
 #[derive(Default, Copy, Clone, Debug, PartialEq)]
@@ -27,6 +29,7 @@ impl Vector3 {
     /// ```
     /// use math_engine::vector3::Vector3;
     /// let vec3 = Vector3::new(1.0,0.0,0.0);
+    /// assert!(vec3.x == 1.0 && vec3.y == 0.0 && vec3.z == 0.0);
     /// ```
     pub fn new(x: f32, y: f32, z: f32) -> Vector3 {
         Self { x, y, z }
@@ -44,7 +47,7 @@ impl Vector3 {
     /// use math_engine::vector3::Vector3;
     /// let v1 = Vector3::new(1.0,0.0,0.0);
     /// let v2 = Vector3::new(1.0,0.0,1.0);
-    /// let d = v1.dot(&v2);
+    /// assert!(v1.dot(&v2) == 1.0);
     /// ```
     pub fn dot(&self, other: &Vector3) -> f32 {
         self.x * other.x + self.y * other.y + self.z * other.z
@@ -57,10 +60,10 @@ impl Vector3 {
     /// ```
     /// use math_engine::vector3::Vector3;
     /// let v = Vector3::new(1.0,0.0,0.0);
-    /// let length = v.magnitude();
+    /// assert!(v.magnitude() == 1.0);
     /// ```
     pub fn magnitude(&self) -> f32 {
-        ((self.x * self.x) + (self.y * self.y)).sqrt()
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
     /// Returns the cross product between this vector and other.
@@ -86,7 +89,7 @@ impl Vector3 {
     }
 
     /// Returns the projection of this vector onto other, under
-    /// the assumption that magnitude of other is 1.
+    /// the assumption that the magnitude of other is 1.
     ///
     /// # Arguments
     ///
@@ -105,7 +108,7 @@ impl Vector3 {
     }
 
     /// Returns the rejection of this vector from other, under
-    /// the assumption that magnitude of other is 1.
+    /// the assumption that the magnitude of other is 1.
     ///
     /// # Arguments
     ///
@@ -148,8 +151,9 @@ impl Vector3 {
     ///
     /// ```
     /// use math_engine::vector3::Vector3;
-    /// let v1 = Vector3::new(1.0,2.0,3.0);
+    /// let v1 = Vector3::new(1.0,0.0,0.0);
     /// let v2 = v1.normalize();
+    /// assert!(v1 == v2);
     /// ```
     pub fn normalize(&self) -> Vector3 {
         *self / self.magnitude()
@@ -162,8 +166,9 @@ impl Vector3 {
     ///
     /// ```
     /// use math_engine::vector3::Vector3;
-    /// let mut v = Vector3::new(1.0,2.0,3.0);
+    /// let mut v = Vector3::new(1.0,0.0,0.0);
     /// v.normalize_mut();
+    /// assert!(v == Vector3::new(1.0, 0.0, 0.0));
     /// ```
     pub fn normalize_mut(&mut self) {
         let m = self.magnitude();
@@ -202,7 +207,8 @@ impl Div<f32> for Vector3 {
     type Output = Self;
 
     fn div(self, other: f32) -> Self::Output {
-        Self::new(self.x / other, self.y / other, self.z / other)
+        let s = 1.0 / other;
+        Self::new(self.x * s, self.y * s, self.z * s)
     }
 }
 
@@ -309,6 +315,17 @@ impl From<Point3> for Vector3 {
             x: p.x,
             y: p.y,
             z: p.z,
+        }
+    }
+}
+
+impl Distribution<Vector3> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Vector3 {
+        let (x, y, z) = rng.gen();
+        Vector3 {
+           x,
+           y,
+           z,
         }
     }
 }

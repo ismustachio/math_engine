@@ -148,5 +148,3 @@ pub fn plane_line_intersect(p: &Point3, v: &Vector3, f: &Plane) -> Option<Point3
         None
     }
 }
-
-

@@ -27,11 +27,30 @@ impl RGB {
     /// ```
     /// use math_engine::rgb::RGB;
     /// let rgb = RGB::new(1.0,1.0,1.0);
+    /// assert!(rgb.r == 1.0 && rgb.g == 1.0 && rgb.b == 1.0);
     /// ```
     pub fn new(r: f32, g: f32, b: f32) -> RGB {
-        Self { r: r % 1.1, g: g % 1.1, b: b % 1.1 }
+        Self {
+            r: r,
+            g: g,
+            b: b,
+        }
+    }
+
+    pub fn White() -> RGB {
+        let r = 1.0;
+        let g = 1.0;
+        let b = 1.0;
+        RGB{
+            r,
+            g,
+            b,
+        }
     }
 }
+
+pub const WHITE: RGB = RGB{ r: 1.0, g: 1.0, b: 1.0 };
+pub const BLACK: RGB = RGB{ r: 0.0, g: 0.0, b: 0.0 };
 
 impl Index<usize> for RGB {
     type Output = f32;
@@ -71,9 +90,9 @@ impl Div<f32> for RGB {
 impl DivAssign<f32> for RGB {
     fn div_assign(&mut self, rhs: f32) {
         let s = 1.0 / rhs;
-        self.r = (self.r * s) % 1.1;
-        self.g = (self.g * s) % 1.1;
-        self.b = (self.b * s) % 1.1;
+        self.r = self.r * s;
+        self.g = self.g * s;
+        self.b = self.b * s;
     }
 }
 
@@ -88,9 +107,9 @@ impl Add<RGB> for RGB {
 impl AddAssign for RGB {
     fn add_assign(&mut self, rhs: Self) {
         *self = Self {
-            r: (self.r + rhs.r) % 1.1,
-            g: (self.g + rhs.g) % 1.1,
-            b: (self.b + rhs.b) % 1.1,
+            r: self.r + rhs.r,
+            g: self.g + rhs.g,
+            b: self.b + rhs.b,
         };
     }
 }
@@ -105,9 +124,9 @@ impl Sub for RGB {
 
 impl SubAssign for RGB {
     fn sub_assign(&mut self, rhs: Self) {
-        self.r = (self.r - rhs.r) % 1.1;
-        self.g = (self.g - rhs.g) % 1.1;
-        self.b = (self.b - rhs.b) % 1.1;
+        self.r = self.r - rhs.r;
+        self.g = self.g - rhs.g;
+        self.b = self.b - rhs.b;
     }
 }
 
@@ -129,17 +148,17 @@ impl Mul for RGB {
 
 impl MulAssign for RGB {
     fn mul_assign(&mut self, rhs: RGB) {
-        self.r = (self.r * rhs.r) % 1.1;
-        self.g = (self.g * rhs.g) % 1.1;
-        self.b = (self.b * rhs.b) % 1.1;
+        self.r = self.r * rhs.r;
+        self.g = self.g * rhs.g;
+        self.b = self.b * rhs.b;
     }
 }
 
 impl MulAssign<f32> for RGB {
     fn mul_assign(&mut self, rhs: f32) {
-        self.r = (self.r * rhs) % 1.1;
-        self.g = (self.g * rhs) % 1.1;
-        self.b = (self.b * rhs) % 1.1;
+        self.r = self.r * rhs;
+        self.g = self.g * rhs;
+        self.b = self.b * rhs;
     }
 }
 
@@ -157,7 +176,7 @@ impl From<RGBA> for RGB {
 
 impl From<[f32; 3]> for RGB {
     fn from(rhs: [f32; 3]) -> Self {
-        RGB::new(rhs[0], rhs[1], rhs[2]) 
+        RGB::new(rhs[0], rhs[1], rhs[2])
     }
 }
 
@@ -167,3 +186,20 @@ impl Into<[f32; 3]> for RGB {
     }
 }
 
+impl Into<u32> for RGB {
+    // TODO: look into if I need to do a ceil or floor
+    fn into(self) -> u32 {
+        let r = (self.r * 255.0).ceil() as u32;
+        let g = (self.g * 255.0).ceil() as u32;
+        let b = (self.b * 255.0).ceil() as u32;
+        let a = 0;
+        (r&0xFF)<<0 | (g&0xFF)<<8 | (b&0xFF)<<16 | (a&0xFF)<<24
+    }
+}
+
+impl From<u32> for RGB {
+    fn from(rhs: u32) -> Self {
+        let s = rhs as f32;
+        RGB::new(s / 255.0, s / 255.0, s / 255.0)
+    }
+}
